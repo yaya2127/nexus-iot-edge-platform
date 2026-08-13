@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Time-Series Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: nexus_postgres
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexustelemetrypassword
+      POSTGRES_DB: nexusiot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  # Redis Hot Telemetry Cache & Pub/Sub
+  redis:
+    image: redis:7-alpine
+    container_name: nexus_redis
+    ports:
+      - "6379:6379"
+
+  # Go Telemetry Ingestion Microservice
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.ingestion
+    container_name: nexus_ingestion
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+      - redis
+
+  # Go WebSocket Gateway Service
+  gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: nexus_gateway
+    ports:
+      - "8082:8082"
+    depends_on:
+      - redis
+
+  # C++/Go Edge Node Simulator
+  edge-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.simulator
+    container_name: nexus_simulator
+    ports:
+      - "8085:8085"
+    depends_on:
+      - ingestion-service
+
+volumes:
+  postgres_data:

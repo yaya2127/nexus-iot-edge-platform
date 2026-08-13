@@ -1,0 +1,6 @@
+# GitHub Linguist Overrides
+# Ignore template HTML/CSS files so Go is highlighted as primary language
+index.html linguist-vendored
+*.html linguist-vendored
+*.css linguist-vendored
+css/* linguist-vendored

@@ -1,0 +1,14 @@
+FROM golang:1.22-alpine AS builder
+WORKDIR /app
+COPY go.mod ./
+COPY services/ ./services/
+COPY simulator/ ./simulator/
+RUN go build -o /ingestion ./services/ingestion
+RUN go build -o /gateway ./services/gateway
+RUN go build -o /simulator ./simulator/edge_simulator.go
+
+FROM alpine:latest
+WORKDIR /
+COPY --from=builder /ingestion /ingestion
+EXPOSE 8081
+CMD ["/ingestion"]
