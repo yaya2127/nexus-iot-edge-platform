@@ -81,3 +81,6 @@ VALUES
     ('DEV-HVAC-03', 'Industrial Chiller HVAC-3', 'HVAC', 'Cooling Tower C', 'ONLINE', '192.168.1.103', '00:1A:2B:3C:4D:60'),
     ('DEV-PUMP-04', 'Chemical Transfer Pump Delta-4', 'PUMP', 'Processing Plant D', 'WARNING', '192.168.1.104', '00:1A:2B:3C:4D:61')
 ON CONFLICT (device_id) DO NOTHING;
+
+-- Device maintenance schedule tracking
+CREATE TABLE IF NOT EXISTS device_maintenance_schedule (id UUID PRIMARY KEY, device_id VARCHAR(64), scheduled_at TIMESTAMP);
