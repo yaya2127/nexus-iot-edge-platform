@@ -56,3 +56,8 @@ docker-compose up -d --build
 * 🌐 Live Portfolio: [yaya2127.github.io/Personal-Portfolio](https://yaya2127.github.io/Personal-Portfolio/)
 * 💼 LinkedIn: [linkedin.com/in/yared-kinetibeb-3b788b350](https://www.linkedin.com/in/yared-kinetibeb-3b788b350/)
 * 📧 Email: [kinetibebyared@gmail.com](mailto:kinetibebyared@gmail.com)
+
+
+## REST API Telemetry Routes
+- POST /api/v1/telemetry -> High-throughput Go ingestion
+- GET /api/v1/devices -> List cluster nodes
