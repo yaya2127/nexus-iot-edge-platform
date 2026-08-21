@@ -1,0 +1,29 @@
+name: NexusIoT Go Microservices CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go 1.22
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+
+    - name: Build Go Ingestion Microservice
+      run: |
+        cd backend/ingestion-service
+        go build -v ./...
+
+    - name: Run Go Unit & Benchmark Tests
+      run: |
+        cd backend/ingestion-service
+        go test -v ./...
