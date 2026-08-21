@@ -205,3 +205,4 @@ export const App: React.FC = () => {
     </div>
   );
 };
+// Telemetry CSV Export Helper
