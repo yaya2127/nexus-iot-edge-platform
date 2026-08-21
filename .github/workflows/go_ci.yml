@@ -18,13 +18,10 @@ jobs:
       with:
         go-version: '1.22'
 
-    - name: Build Go Ingestion Microservice
+    - name: Build Go Microservices
       run: |
-        cd backend/ingestion-service
         go build -v ./...
 
     - name: Run Go Unit & Benchmark Tests
       run: |
-        cd backend/ingestion-service
         go test -v ./...
-# Go CI pipeline timeout config
