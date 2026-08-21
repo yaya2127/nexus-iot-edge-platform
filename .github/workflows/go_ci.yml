@@ -27,3 +27,4 @@ jobs:
       run: |
         cd backend/ingestion-service
         go test -v ./...
+# Go CI pipeline timeout config
