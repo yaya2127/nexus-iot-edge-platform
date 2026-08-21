@@ -63,6 +63,16 @@ CREATE TABLE IF NOT EXISTS maintenance_logs (
     logged_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 5. Audit Export Reports Table
+CREATE TABLE IF NOT EXISTS audit_reports (
+    report_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    report_type VARCHAR(32) NOT NULL, -- 'CSV', 'PDF'
+    file_name VARCHAR(256) NOT NULL,
+    generated_by VARCHAR(128) DEFAULT 'SYSTEM_OPERATOR',
+    total_records INT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Seed Initial Industrial Devices
 INSERT INTO devices (device_id, name, type, location, status, ip_address, mac_address)
 VALUES 
