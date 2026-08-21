@@ -119,6 +119,23 @@
 
     .btn-cyber:hover { background: #fbbf24; transform: translateY(-1px); }
 
+    .btn-export {
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid #334155;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-heading);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-export:hover { background: #334155; }
+
     .btn-danger {
       background: rgba(239, 68, 68, 0.2);
       color: var(--accent-red);
@@ -246,6 +263,25 @@
         setDevices(prev => prev.map(d => d.device_id === devId ? { ...d, status: active ? 'CRITICAL' : 'ONLINE' } : d));
       };
 
+      const handleExportCSV = () => {
+        const rows = [
+          ['Device ID', 'Name', 'Location', 'Status', 'Temp (C)', 'Vibration (mm/s)', 'Pressure (PSI)', 'RPM'],
+          ...devices.map(d => {
+            const t = generateTelemetry(d.device_id, step);
+            return [d.device_id, d.name, d.location, d.status, t.temperature, t.vibration, t.pressure, t.rpm];
+          })
+        ];
+
+        const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `NexusIoT_Telemetry_Report_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
       return (
         <div>
           {/* Header */}
@@ -255,11 +291,15 @@
                 <i className="fas fa-bolt" style={{ color: 'var(--accent-gold)' }}></i>
                 NEXUS<span>IoT</span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500, marginLeft: '8px' }}>
-                  v2.4 Enterprise Edge Platform
+                  v2.5 Enterprise Edge Platform
                 </span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <button onClick={handleExportCSV} className="btn-export">
+                  <i className="fas fa-file-csv"></i> Export CSV Audit Report
+                </button>
+
                 <div className="status-pill status-online">
                   <span className="pulse-dot"></span> Telemetry Stream Active (1.5s)
                 </div>
