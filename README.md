@@ -65,3 +65,7 @@ docker-compose up -d --build
 
 ## Harmonic Frequency Analyzer
 - Real-time vibration FFT analysis
+
+
+## Telemetry Index v2.6
+- Real-time metric stream optimization
