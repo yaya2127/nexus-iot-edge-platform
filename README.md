@@ -69,3 +69,5 @@ docker-compose up -d --build
 
 ## Telemetry Index v2.6
 - Real-time metric stream optimization
+
+<!-- NexusIoT Telemetry V2.7 Optimization Token -->
