@@ -61,3 +61,7 @@ docker-compose up -d --build
 ## REST API Telemetry Routes
 - POST /api/v1/telemetry -> High-throughput Go ingestion
 - GET /api/v1/devices -> List cluster nodes
+
+
+## Harmonic Frequency Analyzer
+- Real-time vibration FFT analysis
