@@ -1,103 +1,50 @@
 # ⚡ NexusIoT — Distributed Industrial IoT Edge & Telemetry Platform
 
-[![Go](https://img.shields.io/badge/Go_Golang-1.22-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://golang.org/)
+[![Go CI](https://github.com/yaya2127/nexus-iot-edge-platform/actions/workflows/go_ci.yml/badge.svg)](https://github.com/yaya2127/nexus-iot-edge-platform/actions)
+[![Go](https://img.shields.io/badge/Go-1.22-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+[![Redis](https://img.shields.io/badge/Redis-7.2-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-An enterprise-grade, distributed Industrial IoT telemetry & edge monitoring platform (**NexusIoT**). Built for high-frequency time-series metric ingestion, real-time anomaly detection, WebSocket live streaming, and interactive 2D/3D hardware Digital Twin visualization.
+A distributed, fault-tolerant **Industrial IoT Edge & Telemetry Platform** (**NexusIoT**). Engineered with high-throughput **Go 1.22 REST Ingestion Microservices**, **Gorilla WebSocket Gateways**, **Redis Pub/Sub** message fan-out, **PostgreSQL 15 Time-Series Storage**, **HTML5 Canvas Digital Twins**, SVG telemetry gauges, interactive fault injectors, and 1-click **Industrial CSV Audit Report Exporters**.
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ Enterprise System Architecture
 
 ```mermaid
 graph TD
-    A["Simulated Edge Hardware Nodes (C++/Go)"] -->|HTTP / gRPC Telemetry Stream| B["Telemetry Ingestion Service (Go :8081)"]
-    B -->|Batch Storage| C[("PostgreSQL Time-Series DB")]
-    B -->|Pub/Sub Telemetry Payload| D["WebSocket Gateway Service (Go :8082)"]
-    B -->|Real-Time Threshold Evaluation| E["Alert Engine Microservice (Go)"]
-    D -->|Real-Time WebSockets| F["React 18 + TypeScript Industrial Dashboard"]
-    C -->|Historical Analytics| F
-    F -->|Remote Anomaly Trigger API| G["Edge Simulator Control Node (:8085)"]
+    A["C++ / Go Hardware Edge Node Simulators"] -->|REST POST /api/v1/telemetry| B["Go 1.22 Ingestion Microservice (:8081)"]
+    B -->|Thread-Safe Pub/Sub| C["Redis Message Broker (:6379)"]
+    B -->|Batch Insert Time-Series| D["PostgreSQL 15 Database (:5432)"]
+    C -->|Sub Broadcast| E["Go WebSocket Gateway Service (:8082)"]
+    E -->|Real-Time WS Push| F["React 18 / HTML5 Canvas Telemetry Dashboard"]
+    F -->|1-Click Audit Export| G["Industrial Telemetry CSV / PDF Exporter"]
 ```
 
 ---
 
-## 🌟 Key Features & Enterprise Capabilities
+## 🌟 Key Platform Capabilities
 
-- ⚡ **High-Throughput Ingestion Microservice**: Built with Go 1.22 for low-latency metric ingestion and concurrent time-series data handling.
-- 📡 **Real-Time WebSocket Gateway**: Pushes 1.5s metric ticks (vibration, temperature, gas PPM, pressure) directly to browser dashboards without reloading.
-- 🤖 **Automated Alert & Anomaly Engine**: Evaluates safety thresholds to trigger critical alarms for thermal runaway, bearing failure, and gas leaks.
-- 🔮 **Hardware Digital Twin Visualizer**: HTML5 Canvas 2D/3D rendering of turbine rotor rotation speeds, thermal gradient heat aura, and vibration harmonic ripples.
-- 📊 **Oscilloscope Multi-Sensor Telemetry Chart**: Real-time canvas line oscilloscope plotting thermal, vibration, and pressure waveforms.
-- 🔌 **Multi-Node Hardware Edge Simulator**: Simulated edge hardware nodes emitting physical sine wave oscillations and handling remote fault injection.
-- 🐳 **Dockerized Deployment**: Fully containerized with `docker-compose.yml` for PostgreSQL, Redis, Go microservices, and React dashboard.
-
----
-
-## 🗄️ Database Schema & Architecture
-
-The database is built on **PostgreSQL 15** with time-series indexing:
-- `devices`: Industrial hardware registry (ID, Name, Type, Location, IP/MAC, Health Status).
-- `telemetry_data`: Time-series log table (Temperature, Vibration, Pressure, Gas PPM, Voltage, RPM, Anomaly Flag).
-- `alert_events`: Log table for triggered safety alarms (Severity, Threshold, Message, Resolution Status).
-- `maintenance_logs`: Technician action history and replaced hardware components.
+1. ⚡ **High-Throughput Go Ingestion Service**: Non-blocking concurrent request handling with gorilla/mux and PostgreSQL connection pooling.
+2. 🔄 **WebSocket Real-Time Broadcast**: Sub-100ms real-time metric pushes to connected industrial operator dashboards.
+3. 🌀 **HTML5 Canvas Digital Twin**: Live rotating turbine rendering with dynamic thermal aura particle feedback.
+4. 📈 **Dual-Line Oscilloscope Chart**: HTML5 Canvas waveform oscilloscope graphing temperature vs vibration in real-time.
+5. 📊 **1-Click Industrial CSV Report Exporter**: Download formatted telemetry audit reports for facility safety compliance.
+6. 🔥 **Fault Injection Simulator**: Interactive controls to simulate thermal runaway, bearing vibration breakdown, and gas leaks.
 
 ---
 
-## 🛠️ Microservice Endpoints
+## 🚀 Quick Start
 
-| Microservice | Port | Protocol | Purpose |
-| :--- | :---: | :---: | :--- |
-| **Telemetry Ingestion** | `:8081` | HTTP / REST | High-frequency metric payload ingestion (`POST /api/v1/telemetry`) |
-| **WebSocket Gateway** | `:8082` | WebSockets | Real-time telemetry streaming (`ws://localhost:8082/ws`) |
-| **Edge Simulator API** | `:8085` | HTTP / REST | Fault injection & simulator control (`POST /api/simulator/trigger`) |
-| **React Dashboard** | `:3000` | HTTP / Web | Industrial Cyber UI dashboard |
+### 1. Web Dashboard & Telemetry Simulator (GitHub Pages)
+👉 Live Hosted App: **[yaya2127.github.io/nexus-iot-edge-platform](https://yaya2127.github.io/nexus-iot-edge-platform/)**
 
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- [Go 1.22+](https://golang.org/)
-- [Node.js 18+](https://nodejs.org/) & `npm`
-- [Docker & Docker Compose](https://www.docker.com/)
-
-### 1. Clone & Run with Docker
+### 2. Multi-Container Docker Deployment
 ```bash
-git clone https://github.com/yaya2127/nexus-iot-edge-platform.git
-cd nexus-iot-edge-platform
-docker-compose up --build
-```
-
-### 2. Local Manual Startup
-
-#### Run Telemetry Ingestion Microservice:
-```bash
-cd services/ingestion
-go run main.go
-```
-
-#### Run WebSocket Gateway Service:
-```bash
-cd services/gateway
-go run main.go
-```
-
-#### Run Edge Hardware Simulator:
-```bash
-cd simulator
-go run edge_simulator.go
-```
-
-#### Run React Dashboard:
-```bash
-cd web
-npm install
-npm run dev
+docker-compose up -d --build
 ```
 
 ---
