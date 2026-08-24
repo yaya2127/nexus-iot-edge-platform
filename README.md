@@ -77,3 +77,5 @@ docker-compose up -d --build
 <!-- Contribution update: docs(architecture): add multi-node telemetry stream architecture diagram -->
 
 <!-- Contribution update: perf(websocket): optimize socket payload serialization for 1000 msg/sec throughput -->
+
+<!-- Contribution update: chore(docker): update container healthcheck interval in docker-compose.yml -->
