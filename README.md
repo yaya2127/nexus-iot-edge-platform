@@ -73,3 +73,5 @@ docker-compose up -d --build
 <!-- NexusIoT Telemetry V2.7 Optimization Token -->
 
 <!-- Contribution update: feat(analytics): add real-time telemetry anomaly anomaly detection threshold config -->
+
+<!-- Contribution update: docs(architecture): add multi-node telemetry stream architecture diagram -->
