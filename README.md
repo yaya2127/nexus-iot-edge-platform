@@ -79,3 +79,5 @@ docker-compose up -d --build
 <!-- Contribution update: perf(websocket): optimize socket payload serialization for 1000 msg/sec throughput -->
 
 <!-- Contribution update: chore(docker): update container healthcheck interval in docker-compose.yml -->
+
+<!-- Contribution update: refactor(model): restructure telemetry data payload types -->
