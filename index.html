@@ -153,6 +153,19 @@
 
     .btn-danger:hover { background: var(--accent-red); color: #fff; }
 
+    .search-input {
+      background: #06090e;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      color: #fff;
+      font-size: 0.8rem;
+      outline: none;
+      width: 220px;
+    }
+
+    .search-input:focus { border-color: var(--accent-gold); }
+
     .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
     .main-layout-grid { display: grid; grid-template-columns: 1.4fr 0.6fr; gap: 24px; margin-bottom: 24px; }
 
@@ -185,7 +198,6 @@
 <body>
   <div id="root"></div>
 
-  <!-- Standalone React + 3D WebGL Three.js Dashboard Application -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
@@ -199,12 +211,14 @@
     function NexusApp() {
       const [selectedDeviceID, setSelectedDeviceID] = useState('DEV-TURBINE-01');
       const [devices, setDevices] = useState(DEFAULT_DEVICES);
+      const [searchQuery, setSearchQuery] = useState('');
       const [step, setStep] = useState(0);
       const [anomalies, setAnomalies] = useState({});
       const [alerts, setAlerts] = useState([]);
       const [audioEnabled, setAudioEnabled] = useState(false);
+      const [customModalOpen, setCustomModalOpen] = useState(false);
+      const [customVal, setCustomVal] = useState({ temp: 120, vibe: 9.5 });
 
-      // Generate simulation telemetry data dynamically
       const generateTelemetry = (devId, s) => {
         const base = devId === 'DEV-TURBINE-01' ? { temp: 78.5, vibe: 2.1, press: 45.0, gas: 12.0, rpm: 3600 } :
                      devId === 'DEV-GEN-02' ? { temp: 65.0, vibe: 1.4, press: 32.0, gas: 8.5, rpm: 1800 } :
@@ -226,17 +240,14 @@
           isAnomaly = true;
           if (activeAnomaly === 'THERMAL') temp += 45.0;
           if (activeAnomaly === 'VIBRATION') vibe += 8.5;
-          if (activeAnomaly === 'GAS_LEAK') gas += 180.0;
+          if (activeAnomaly === 'CUSTOM') { temp = customVal.temp; vibe = customVal.vibe; }
         }
 
         return { device_id: devId, temperature: temp, vibration: vibe, pressure: press, gas_ppm: gas, voltage: 380, rpm: rpm, is_anomaly: isAnomaly, recorded_at: new Date().toISOString() };
       };
 
-      // Telemetry step loop (1.5s updates)
       useEffect(() => {
-        const timer = setInterval(() => {
-          setStep(prev => prev + 1);
-        }, 1500);
+        const timer = setInterval(() => { setStep(prev => prev + 1); }, 1500);
         return () => clearInterval(timer);
       }, []);
 
@@ -244,7 +255,6 @@
       const secondaryTelemetry = generateTelemetry('DEV-PUMP-04', step);
       const currentDevice = devices.find(d => d.device_id === selectedDeviceID) || devices[0];
 
-      // Handle anomaly triggers & audio siren
       const handleTriggerAnomaly = (devId, anomalyType, active) => {
         setAnomalies(prev => {
           const next = { ...prev };
@@ -259,12 +269,11 @@
             device_id: devId,
             severity: 'CRITICAL',
             metric_type: anomalyType,
-            message: `Simulated fault injected [${anomalyType}] on ${devId}`,
+            message: `Fault injected [${anomalyType}] on ${devId}`,
             triggered_at: new Date().toISOString()
           };
           setAlerts(prev => [newAlert, ...prev]);
 
-          // Play Audio Alarm Siren if enabled
           if (audioEnabled) {
             try {
               const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -274,10 +283,8 @@
               osc.frequency.setValueAtTime(880, ctx.currentTime);
               osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.5);
               gain.gain.setValueAtTime(0.3, ctx.currentTime);
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.start();
-              osc.stop(ctx.currentTime + 0.5);
+              osc.connect(gain); gain.connect(ctx.destination);
+              osc.start(); osc.stop(ctx.currentTime + 0.5);
             } catch(e) {}
           }
         }
@@ -293,7 +300,6 @@
             return [d.device_id, d.name, d.location, d.status, t.temperature, t.vibration, t.pressure, t.rpm, t.recorded_at];
           })
         ];
-
         const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement('a');
@@ -304,51 +310,46 @@
         document.body.removeChild(link);
       };
 
+      const filteredDevices = devices.filter(d => 
+        d.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        d.device_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.location.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
       return (
         <div>
-          {/* Header */}
           <header className="app-header">
             <div className="container-fluid header-flex">
               <div className="brand-title">
                 <i className="fas fa-bolt" style={{ color: 'var(--accent-gold)' }}></i>
                 NEXUS<span>IoT</span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500, marginLeft: '8px' }}>
-                  v3.0 Enterprise WebGL Platform
+                  v3.5 Enterprise Control Center
                 </span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <button onClick={() => setCustomModalOpen(true)} className="btn-cyber">
+                  <i className="fas fa-sliders"></i> Custom Injection
+                </button>
+
                 <button onClick={() => setAudioEnabled(!audioEnabled)} className="btn-export" style={{ background: audioEnabled ? 'rgba(239,68,68,0.2)' : '#1e293b', borderColor: audioEnabled ? 'var(--accent-red)' : '#334155' }}>
                   <i className={`fas ${audioEnabled ? 'fa-volume-high' : 'fa-volume-xmark'}`} style={{ color: audioEnabled ? 'var(--accent-red)' : '#fff' }}></i>
-                  {audioEnabled ? 'Siren Audio ON' : 'Enable Alarm Siren'}
+                  {audioEnabled ? 'Audio ON' : 'Enable Audio Siren'}
                 </button>
 
                 <button onClick={handleExportCSV} className="btn-export">
-                  <i className="fas fa-file-csv"></i> Export CSV Audit Report
+                  <i className="fas fa-file-csv"></i> Export CSV
                 </button>
 
                 <div className="status-pill status-online">
-                  <span className="pulse-dot"></span> Telemetry Stream Active (1.5s)
+                  <span className="pulse-dot"></span> Active Stream
                 </div>
-                <div className="status-pill status-online">
-                  <i className="fas fa-network-wired"></i> 4/4 Nodes Online
-                </div>
-                {alerts.length > 0 ? (
-                  <div className="status-pill status-critical" style={{ animation: 'pulse 1s infinite' }}>
-                    <i className="fas fa-exclamation-triangle"></i> {alerts.length} Critical Alert(s)
-                  </div>
-                ) : (
-                  <div className="status-pill status-online">
-                    <i className="fas fa-shield-alt"></i> System Nominal
-                  </div>
-                )}
               </div>
             </div>
           </header>
 
-          {/* Main Container */}
           <main className="container-fluid" style={{ paddingTop: '24px', paddingBottom: '40px' }}>
-            {/* Top 4 SVG Circular Telemetry Gauges */}
             <div className="dashboard-grid">
               <GaugeCard title="Thermal Sensor" val={currentTelemetry.temperature} unit="°C" max={150} warn={85} crit={100} icon="fas fa-thermometer-half" />
               <GaugeCard title="Bearing Vibration" val={currentTelemetry.vibration} unit="mm/s" max={15} warn={5.0} crit={8.0} icon="fas fa-wave-square" />
@@ -356,37 +357,54 @@
               <GaugeCard title="Atmospheric Gas" val={currentTelemetry.gas_ppm} unit="PPM" max={300} warn={100} crit={150} icon="fas fa-smog" />
             </div>
 
-            {/* Multi-Node Oscilloscope & 3D WebGL Digital Twin */}
             <div className="main-layout-grid">
               <MultiNodeOscilloscopeCard nodeA={currentTelemetry} nodeB={secondaryTelemetry} step={step} />
               <ThreeDigitalTwinCard deviceID={currentDevice.device_id} name={currentDevice.name} rpm={currentTelemetry.rpm} temp={currentTelemetry.temperature} vibe={currentTelemetry.vibration} status={currentDevice.status} />
             </div>
 
-            {/* Device Registry & Alerts */}
             <div className="main-layout-grid">
-              <DeviceRegistryTable devices={devices} selectedID={selectedDeviceID} onSelect={setSelectedDeviceID} onTrigger={handleTriggerAnomaly} />
+              <DeviceRegistryTable devices={filteredDevices} selectedID={selectedDeviceID} onSelect={setSelectedDeviceID} onTrigger={handleTriggerAnomaly} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
               <AlertsLogCard alerts={alerts} />
             </div>
           </main>
+
+          {/* Custom Anomaly Injector Modal */}
+          {customModalOpen && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+              <div style={{ background: '#0d131f', border: '1px solid var(--accent-gold)', borderRadius: '12px', padding: '28px', maxWidth: '440px', width: '90%' }}>
+                <h3 className="font-heading" style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '14px' }}>
+                  <i className="fas fa-sliders" style={{ color: 'var(--accent-gold)', marginRight: '8px' }}></i>
+                  Custom Hardware Anomaly Injector
+                </h3>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Target Thermal Temp (°C):</label>
+                  <input type="number" value={customVal.temp} onChange={e => setCustomVal({ ...customVal, temp: +e.target.value })} style={{ width: '100%', background: '#06090e', border: '1px solid #1e293b', color: '#fff', padding: '8px', borderRadius: '6px', marginTop: '4px' }} />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Bearing Vibration (mm/s):</label>
+                  <input type="number" value={customVal.vibe} onChange={e => setCustomVal({ ...customVal, vibe: +e.target.value })} style={{ width: '100%', background: '#06090e', border: '1px solid #1e293b', color: '#fff', padding: '8px', borderRadius: '6px', marginTop: '4px' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setCustomModalOpen(false)} className="btn-export">Cancel</button>
+                  <button onClick={() => { handleTriggerAnomaly(selectedDeviceID, 'CUSTOM', true); setCustomModalOpen(false); }} className="btn-cyber">Inject Custom Fault</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
 
-    // Gauge Card Component
     function GaugeCard({ title, val, unit, max, warn, crit, icon }) {
       const color = val >= crit ? 'var(--accent-red)' : val >= warn ? 'var(--accent-gold)' : 'var(--accent-green)';
-      const radius = 42;
-      const circ = 2 * Math.PI * radius;
-      const pct = Math.min(val / max, 1);
-      const offset = circ - pct * circ;
-
+      const radius = 42; const circ = 2 * Math.PI * radius;
+      const pct = Math.min(val / max, 1); const offset = circ - pct * circ;
       return (
         <div className="cyber-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', fontSize: '0.8rem', fontWeight: 700 }}>
             <span><i className={icon} style={{ color, marginRight: '8px' }}></i>{title}</span>
             <span style={{ fontFamily: 'var(--font-mono)', color, fontSize: '0.7rem' }}>MAX {max}{unit}</span>
           </div>
-
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '110px' }}>
             <svg width="110" height="110" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r={radius} fill="none" stroke="#1e293b" strokeWidth="8" />
@@ -397,61 +415,29 @@
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{unit}</div>
             </div>
           </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '10px', borderTop: '1px solid #1e293b', paddingTop: '8px' }}>
-            <span>Status:</span>
-            <span style={{ color, fontWeight: 700 }}>{val >= crit ? 'CRITICAL OVERHEAT' : val >= warn ? 'ELEVATED' : 'NOMINAL'}</span>
-          </div>
         </div>
       );
     }
 
-    // Multi-Node Oscilloscope Component
     function MultiNodeOscilloscopeCard({ nodeA, nodeB, step }) {
       const canvasRef = useRef(null);
       const historyARef = useRef([]);
       const historyBRef = useRef([]);
 
       useEffect(() => {
-        historyARef.current.push(nodeA);
-        if (historyARef.current.length > 40) historyARef.current.shift();
-
-        historyBRef.current.push(nodeB);
-        if (historyBRef.current.length > 40) historyBRef.current.shift();
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const w = canvas.width;
-        const h = canvas.height;
-
-        ctx.clearRect(0, 0, w, h);
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 1;
-
+        historyARef.current.push(nodeA); if (historyARef.current.length > 40) historyARef.current.shift();
+        historyBRef.current.push(nodeB); if (historyBRef.current.length > 40) historyBRef.current.shift();
+        const canvas = canvasRef.current; if (!canvas) return;
+        const ctx = canvas.getContext('2d'); const w = canvas.width; const h = canvas.height;
+        ctx.clearRect(0, 0, w, h); ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
         for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
         for (let y = 0; y < h; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-
-        const pointsA = historyARef.current;
-        const pointsB = historyBRef.current;
-        if (pointsA.length < 2) return;
-        const stepX = w / (pointsA.length - 1);
-
-        // Node A Temp (Gold)
+        const pointsA = historyARef.current; const pointsB = historyBRef.current;
+        if (pointsA.length < 2) return; const stepX = w / (pointsA.length - 1);
         ctx.beginPath(); ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
-        pointsA.forEach((p, i) => {
-          const y = h - ((p.temperature - 20) / 100) * (h - 20) - 10;
-          if (i === 0) ctx.moveTo(0, y); else ctx.lineTo(i * stepX, y);
-        });
-        ctx.stroke();
-
-        // Node B Temp (Cyan - Comparative Line)
+        pointsA.forEach((p, i) => { const y = h - ((p.temperature - 20) / 100) * (h - 20) - 10; if (i === 0) ctx.moveTo(0, y); else ctx.lineTo(i * stepX, y); }); ctx.stroke();
         ctx.beginPath(); ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 2;
-        pointsB.forEach((p, i) => {
-          const y = h - ((p.temperature - 20) / 100) * (h - 20) - 10;
-          if (i === 0) ctx.moveTo(0, y); else ctx.lineTo(i * stepX, y);
-        });
-        ctx.stroke();
+        pointsB.forEach((p, i) => { const y = h - ((p.temperature - 20) / 100) * (h - 20) - 10; if (i === 0) ctx.moveTo(0, y); else ctx.lineTo(i * stepX, y); }); ctx.stroke();
       }, [nodeA, nodeB, step]);
 
       return (
@@ -473,87 +459,49 @@
       );
     }
 
-    // Interactive 3D WebGL Three.js Digital Twin Component
     function ThreeDigitalTwinCard({ deviceID, name, rpm, temp, vibe, status }) {
       const containerRef = useRef(null);
       const rotorRef = useRef(null);
 
       useEffect(() => {
-        const container = containerRef.current;
-        if (!container || !window.THREE) return;
-
-        const w = container.clientWidth || 220;
-        const h = 200;
-
-        // 1. Scene, Camera, Renderer
+        const container = containerRef.current; if (!container || !window.THREE) return;
+        const w = container.clientWidth || 220; const h = 200;
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-        camera.position.set(0, 3, 7);
-        camera.lookAt(0, 0, 0);
-
+        camera.position.set(0, 3, 7); camera.lookAt(0, 0, 0);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(w, h);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        container.innerHTML = '';
-        container.appendChild(renderer.domElement);
+        renderer.setSize(w, h); renderer.setPixelRatio(window.devicePixelRatio);
+        container.innerHTML = ''; container.appendChild(renderer.domElement);
 
-        // 2. Industrial Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xf59e0b, 1.2); dirLight.position.set(5, 10, 5); scene.add(dirLight);
 
-        const dirLight = new THREE.DirectionalLight(0xf59e0b, 1.2);
-        dirLight.position.set(5, 10, 5);
-        scene.add(dirLight);
-
-        // 3. 3D Turbine Rotor Assembly Group
         const turbineGroup = new THREE.Group();
-
-        // Stator Outer Ring
         const ringGeo = new THREE.TorusGeometry(2.2, 0.15, 16, 100);
         const ringMat = new THREE.MeshStandardMaterial({ color: status === 'CRITICAL' ? 0xef4444 : 0x1e293b, metalness: 0.8, roughness: 0.2 });
-        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-        turbineGroup.add(ringMesh);
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat); turbineGroup.add(ringMesh);
 
-        // Center Shaft Core
         const coreGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.2, 32);
         const coreMat = new THREE.MeshStandardMaterial({ color: temp > 100 ? 0xef4444 : 0xf59e0b, metalness: 0.9, roughness: 0.1 });
-        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-        coreMesh.rotation.x = Math.PI / 2;
-        turbineGroup.add(coreMesh);
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat); coreMesh.rotation.x = Math.PI / 2; turbineGroup.add(coreMesh);
 
-        // 6 Metallic Turbine Blades
         const bladeGroup = new THREE.Group();
         for (let i = 0; i < 6; i++) {
           const bladeGeo = new THREE.BoxGeometry(0.25, 1.6, 0.06);
           const bladeMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.8, roughness: 0.2 });
-          const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
-          bladeMesh.position.y = 1.1;
-          const bladePivot = new THREE.Group();
-          bladePivot.rotation.z = (Math.PI * 2 / 6) * i;
-          bladePivot.add(bladeMesh);
+          const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat); bladeMesh.position.y = 1.1;
+          const bladePivot = new THREE.Group(); bladePivot.rotation.z = (Math.PI * 2 / 6) * i; bladePivot.add(bladeMesh);
           bladeGroup.add(bladePivot);
         }
-        turbineGroup.add(bladeGroup);
-        rotorRef.current = bladeGroup;
+        turbineGroup.add(bladeGroup); rotorRef.current = bladeGroup; scene.add(turbineGroup);
 
-        scene.add(turbineGroup);
-
-        // 4. Render Animation Loop
         let animId;
         const animate = () => {
-          if (rotorRef.current) {
-            rotorRef.current.rotation.z += (rpm / 3600) * 0.12;
-          }
-          turbineGroup.rotation.y += 0.005; // 360° slow orbit
-          renderer.render(scene, camera);
-          animId = requestAnimationFrame(animate);
+          if (rotorRef.current) rotorRef.current.rotation.z += (rpm / 3600) * 0.12;
+          turbineGroup.rotation.y += 0.005; renderer.render(scene, camera); animId = requestAnimationFrame(animate);
         };
         animate();
-
-        return () => {
-          cancelAnimationFrame(animId);
-          renderer.dispose();
-        };
+        return () => { cancelAnimationFrame(animId); renderer.dispose(); };
       }, [rpm, temp, vibe, status]);
 
       return (
@@ -565,20 +513,22 @@
           <div style={{ background: '#06090e', border: '1px solid #1e293b', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
             <div ref={containerRef} style={{ width: '100%', height: '200px' }} />
             <div style={{ fontWeight: 800, color: '#fff', fontSize: '0.9rem', marginTop: '4px' }}>{name}</div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Rotor: <strong style={{ color: 'var(--accent-cyan)' }}>{rpm} RPM</strong> | Temp: <strong style={{ color: temp > 100 ? 'var(--accent-red)' : 'var(--accent-gold)' }}>{temp}°C</strong></div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Rotor: <strong style={{ color: 'var(--accent-cyan)' }}>{rpm} RPM</strong></div>
           </div>
         </div>
       );
     }
 
-    // Registry Component
-    function DeviceRegistryTable({ devices, selectedID, onSelect, onTrigger }) {
+    function DeviceRegistryTable({ devices, selectedID, onSelect, onTrigger, searchQuery, setSearchQuery }) {
       return (
         <div className="cyber-card">
-          <h3 className="font-heading" style={{ fontSize: '0.95rem', color: '#fff', marginBottom: '14px' }}>
-            <i className="fas fa-server" style={{ color: 'var(--accent-gold)', marginRight: '8px' }}></i>
-            Cluster Hardware Device Registry & Simulator Controls
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <h3 className="font-heading" style={{ fontSize: '0.95rem', color: '#fff' }}>
+              <i className="fas fa-server" style={{ color: 'var(--accent-gold)', marginRight: '8px' }}></i>
+              Hardware Device Registry
+            </h3>
+            <input type="text" placeholder="🔍 Search hardware node..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="search-input" />
+          </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
               <thead>
@@ -611,7 +561,6 @@
       );
     }
 
-    // Alerts Log Component
     function AlertsLogCard({ alerts }) {
       return (
         <div className="cyber-card">
@@ -623,7 +572,7 @@
             {alerts.length === 0 ? (
               <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '20px' }}>
                 <i className="fas fa-shield-alt" style={{ color: 'var(--accent-green)', fontSize: '1.2rem', marginBottom: '6px', display: 'block' }}></i>
-                No active anomalies. All hardware nodes operating normally.
+                System Nominal. No active alerts.
               </div>
             ) : (
               alerts.map(a => (
@@ -642,3 +591,5 @@
   </script>
 </body>
 </html>
+
+<!-- Hardware node real-time search filter v3.5 -->
